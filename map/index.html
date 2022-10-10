@@ -78,26 +78,12 @@
 
 	// == List of Coordinates ==
 	// >Towns
-	var portlera = xy(479.0, 353.0);
-	var hiyokitown = xy(472.0, 429.0);
 	// >Routes
-	var route100 = xy(461.0, 367.0);
-	var route101 = xy(496.5, 396.5);
-	var route101b = xy(454.5, 382.0);
-	var route104 = xy(445.5, 394.0);
-	var route102 = xy(483.0, 412.0);
 	// >Special Zones
 
 	// == Start of Pins ==
 	// >Towns
-	var mPortLera = L.marker(portlera, {icon: normalIcon}).addTo(map).bindPopup('<h1><b>Port Lera</b></h1><h2><b>Description:</b> Port Lera is where most Pokèmon journies in the region of Lunos begin. It contains a ferry service to travel far distances, and a shipyard that accepts imports from other regions.</h2><h2>Not many trainers live in Port Lera despite its close access to the shore. The primary reason for this is a lack of services for trainers, such as a PokèMart, Move Tutor, and PokèCenter. It is the home of the Pokèmon Research Lab, run by Professor Cherrywood.</h2><h2><b>Services:</b> <i>Loyalty Rater, Extra&#x27 Bar & Wings, Pokèmon Research Lab.</i></h2>');
-	var mHiyokiTown = L.marker(hiyokitown, {icon: normalIcon}).addTo(map).bindPopup('<h1><b>Hiyoki Town</b></h1><h2><b>Description:</b> A small rural town with a close-knit atmosphere. All residents of Hiyoki Town know each other, and newcomers are treated with hospitality traditional of the southern tip of Lunos. It isn&#x27t a very popular town, yet it has access to a PokèMart and is the location of Team Latias&#x27s Wings due to the monetary stimulus supplied by Reginald, a former gym leader.</h2><h2><b>Services:</b> <i>Hiyoki Town PokèMart, Team Latias&#x27s Wings (includes Pokèmon Center), Dover Saddlery, Fortune Street.</i></h2>');
 	// >Routes
-	var mRoute100 = L.marker(route100, {icon: normalIcon}).addTo(map).bindPopup('<h1><b>Route 100</b></h1><h2><b>Descriptions:</b> A small grasslands route that can be immediately found after exiting Port Lera.</h2><h2><b>Level Range:</b> 3-5.</h2><h2><b>Wild Encounters:</b><ul><li>Audino (Medium)</li><li>Eevee (Extremely Low)</li><li>Ekans (Medium-High)</li><li>Hoppip (Medium-High)</li><li>Pichu (Low)</li><li>Ralts (Extremely Low)</li><li>Starly (Medium)</li><li>Sunkern (Medium)</li></ul></h2>');
-	var mRoute101 = L.marker(route101, {icon: normalIcon}).addTo(map).bindPopup('<h1><b>Route 101</b></h1><h2><b>Descriptions:</b> A pleasant grasslands surrounded by a forest and enumerated with begonias.</h2><h2><b>Level Range:</b> 3-5.</h2><h2><b>Wild Encounters:</b><ul><li>Audino (Low)</li><li>Bidoof (Medium-Low)</li><li>Buneary (Low)</li><li>Caterpie (Medium-High)</li><li>Combee (Low)</li><li>Eevee (Extremely Low)</li><li>Hoppip (Medium-High)</li><li>Lillipup (Medium)</li><li>Patrat (Medium)</li><li>Petilil (Extremely Low)</li><li>Purrloin (Medium)</li><li>Shuckle (Low)</li><li>Sunkern (Medium)</li><li>Wurmple (Medium-High)</ul></h2>');
-	var mRoute101b = L.marker(route101b, {icon: normalIcon}).addTo(map).bindPopup('<h1><b>Route 101-B</b></h1><h2><b>Descriptions:</b> A large maze-like forest that harbors dark secrets. Ghost Pokèmon have made this route their home.</h2><h2><b>Level Range:</b> 5-7.</h2><h2><b>Wild Encounters:</b><ul><li>Duskull (Medium)</li><li>Gastly (Low)</li><li>Misdreavus (Medium-Low)</li><li>Phantump (Low)</li><li>Poochyena (Medium)</li><li>Pumpkaboo (Extremely Low)</li><li>Seedot (Low)</li><li>Spinarak (Medium)</li><li>Yamask (Medium)</li></ul></h2>');
-	var mRoute104 = L.marker(route104, {icon: normalIcon}).addTo(map).bindPopup('<h1><b>Route 104</b></h1><h2><b>Descriptions:</b> The north exit of the maze that is 101-B. Quaint and quiet at nighttime. Few ghosts enter this area. A cave can be from the base of a hill after entering the route.</h2><h2><b>Level Range:</b> 5-7.</h2><h2><b>Wild Encounters:</b><ul><li>Murkrow (Medium)</li><li>Nickit (Low)</li></li><li>Poochyena (Medium)</li><li>Rattata-Alolan (Low)</li><li>Spinarak (Medium-High)</li><li>Zigzagoon-Galarian (Extremely Low)</li><li>Zorua (Extremely Low)</li></ul></h2>');
-	var mRoute102 = L.marker(route102, {icon: normalIcon}).addTo(map).bindPopup('<h1><b>Route 102</b></h1><h2><b>Descriptions:</b> The connecting route from 101. A pleasant grasslands which branches off into Hiyoki Town and the Gifted Shrine. The flowers are no longer as plentiful, and the grass has grown longer.</h2><h2><b>Level Range:</b> 3-5.</h2><h2><b>Wild Encounters:</b><ul><li>Bidoof (Medium)</li><li>Blitzle (Low)</li><li>Caterpie (High)</li><li>Foongus (Medium-Low)</li><li>Hoppip (High)</li><li>Lickitung (Extremely Low)</li><li>Paras (Extremely Low)</li><li>Rhyhorn (Extremely Low)</li><li>Venonat (Low)</li><li>Weedle (High)</li></ul></h2>');
 	// >Special Zones
 
 	// Apostrophe: &#x27
@@ -105,15 +91,6 @@
 
 	// Default Map View
 	map.setView(xy(475, 475), 2);
-
-	function onMapClick(e) {
-		var popup = L.popup()
-			.setLatLng(e.latlng)
-			.setContent(e.latlng.toString())
-			.openOn(map);
-	}
-
-	map.on('click', onMapClick);
 
 </script>
 
