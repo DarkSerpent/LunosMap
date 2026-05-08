@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokéTalk App</title>
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
+	<link rel="stylesheet" href="style/scroll.css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'FutureMillennium';
+            src: url('fonts/FutureMillennium.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Dyno Regular';
+            src: url('fonts/Dyno-Regular.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Dyno Bold';
+            src: url('fonts/Dyno-Bold.ttf') format('truetype');
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+			cursor: help;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+			width: 350px;
+            background-color: rgba(32, 44, 52, 0.7);
+            color: #fff;
+            text-align: center;
+            position: absolute;
+            z-index: 1;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+			border-radius: 6px;
+			padding: 5px 10px;
+			font-size: 12px;
+			font-family: Dyno Regular;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .birthday-text {
+            text-decoration: none;
+            cursor: help;
+        }
+
+        .badge-case {
+            display: none;
+            margin-top: 1rem;
+            border-spacing: 0;
+        }
+
+        .badge-case td {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .contest-record {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: rgba(75, 85, 99, 0.5);
+            border-radius: 8px;
+        }
+
+        .contest-record ul {
+            list-style-type: disc;
+            margin-left: 20px;
+            color: #d1d5db;
+        }
+
+        .bg-color-1 {
+            background-color: rgba(55, 65, 81, 0.5);
+        }
+
+        .bg-color-2 {
+            background-color: rgba(143, 163, 154, 0.5);
+        }
+
+        .info-button {
+            color: #9ca3af;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .info-button:hover {
+            color: lightgray;
+        }
+
+        .popup-container {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(32, 44, 52, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            font-family: 'DynoRegular', sans-serif;
+            width: 80%;
+            max-width: 600px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .close-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+        }
+
+        .popup-content ul {
+            list-style-type: disc;
+            margin: 10px 0 0 20px;
+        }
+
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 h-screen flex">
+    <aside id="sidebar" class="w-80 bg-gray-800 border-r border-gray-700 flex-shrink-0 hidden md:block">
+        <div class="p-4 border-b border-gray-700">
+            <div class="relative">
+                <input type="text" id="searchInput" placeholder="Search contacts..." class="w-full bg-gray-700 text-gray-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+            </div>
+        </div>
+        <div class="overflow-y-auto h-[calc(100vh-80px)]">
+            <div id="contactList" class="contact-list space-y-2 p-3">
+
+			<!-- Contacts will be dynamically injected here -->
+
+            </div>
+        </div>
+    </aside>
+    <main class="flex-1 flex flex-col">
+        <header class="bg-gray-800 p-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-400 hover:text-gray-200">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="initiateCall()" class="text-gray-400 hover:text-gray-200">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <button onclick="initiateVideo()" class="text-gray-400 hover:text-gray-200">
+                    <i class="fas fa-video"></i>
+                </button>
+				<button onclick="showInfo()" class="info-button">
+					<i class="fas fa-info-circle"></i>
+				</button>
+
+				<div id="popup-overlay" class="popup-overlay" onclick="showInfo()"></div>
+
+				<div id="popup-container" class="popup-container">
+					<button class="close-button" onclick="showInfo()">&times;</button>
+					<div class="popup-content">
+						<h2><strong>Update Notes</strong></h2> <br />
+						<p><u>Date:</u> 5-27-2026 @ 11:00 PM CDT</p>
+						<ul>
+							<li>Published the PokéTalk App site to Github.</li>
+						</ul> <br />
+						<p><u>Date:</u> 5-27-2026 @ 10:50 PM CDT</p>
+						<ul>
+							<li>Added the following contacts to the list: Trent, Piera, Drayden, Sudo, Wendy, Syre, Tommy, Trust, Caeya, Fredrick, Rain, and Tristan. Also added descriptions for all Teams.</li>
+						</ul> <br />
+						<p><u>Date:</u> 5-27-2026 @ 7:30 PM CDT</p>
+						<ul>
+							<li>Added 70+ contacts to the list, modified some stylization, and added the "Mutual Friends" feature. You can also now search contacts by their @ and also view the app based on certain characters by adding a # to the link.</li>
+						</ul> <br />
+						<p><u>Date:</u> 12-26-2024 @ 8:30 PM CST</p>
+						<ul>
+							<li>Alos's status, mood message, and GPS state has been changed.</li>
+						</ul> <br />
+						<p><u>Date:</u> 12-26-2024 @ 8:00 PM CST</p>
+						<ul>
+							<li>PokéTalk App site is live!</li>
+						</ul>
+					</div>
+				</div>
+
+				<script>
+					function showInfo() {
+						const popup = document.getElementById('popup-container');
+						const overlay = document.getElementById('popup-overlay');
+
+						if (popup.style.display === 'none' || popup.style.display === '') {
+							popup.style.display = 'block';
+							overlay.style.display = 'block';
+						} else {
+							popup.style.display = 'none';
+							overlay.style.display = 'none';
+						}
+					}
+				</script>
+            </div>
+        </header>
+        <div id="chatContainer" class="flex-1 flex flex-col items-center justify-center">
+            <div class="text-center">
+                <img src="icons/Logo.png" alt="Logo" width="350" height="350" class="block mx-auto mb-4">
+                <p class="text-gray-400 text-xs" style="font-family: 'Dyno Regular';">Click on a contact to get started.</p>
+                <p class="text-gray-400 text-xs" style="font-family: 'Dyno Regular';">Search for a contact to find a specific person, or search using an "@" symbol to do a username search.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const teamDescriptions = {
+            "Team Latias's Wing": "A relatively new team established under the guidance and mentorship of Reginald Reid, an ex-gym trainer in the Lunos region. Its recognition owes entirely to Reginald's association with it, rather than any noteworthy accomplishments of its own. Of Lunos's over thirty dedicated battle teams (or &quotace trainer teams&quot), this particular team remains both obscure and unheralded. It is the team that all players in the campaign currently belong to.",
+            "Team Latios's Tail": "Team Latios's Tail stands as the preeminent battle team of the Lunos region. its success attributable to the unwavering guidance and mentorship of Azure, the Champion. The process of gaining entry into this exclusive fraternity is arduous and demanding, as only the most gifted and determined candidates are deemed worthy to join. Yet, those who succeed can look forward to basking in the limelight of fame and fortune, as nearly every member of Team Latios's Tail has a fulfilling and monetarily-rewarding career.",
+            "Team Rising Heat": "With a reputation that vacillates between the coveted positions of second or third place among the elite battle teams of the Lunos region, Team Rising Heat finds itself in a perpetual state of flux, often trading places with its close rival, Team Dominate. It was formed under the astute leadership and mentorship of Therese, a gym leader of the Lunos region, and one whose prowess on the battlefield is matched only by her acumen for guiding others in the art of wild battles, which is much unlike Team Latios&#39;s Tail&#39;s focus on league battles.",
+            "Team Style & Flourish": "Dedicated to the pursuit of excellence in the fiercely competitive realm of Pokémon contests, this team boasts a storied history as one of the most esteemed and prestigious in the entire region. Its illustrious ranks include several celebrity trainers who have risen to fame both within and beyond the confines of Lunos. Yet, membership in this exclusive, hierarchal organization is reserved only for those whose merit and success in contests is beyond reproach, as each member is held to a rigorous standard of performance. In order to maintain their privileged status, each trainer is required to meet a monthly quota of top-tier placements, a daunting task that serves to reinforce the team's unwavering commitment to excellence.",
+            "Team Unbound": "Nestled in the desolate ruins of Zircon City, the Lunos region's sole occult-based team operates in obscurity, shrouded in mystery and secrecy. Founded under the visionary guidance of Raela, a former gym leader whose passion for the esoteric is matched only by her expertise on the battlefield, this clandestine organization has since passed into the capable hands of Saika, a current gym leader of formidable repute. The team's methods and objectives remain a closely-guarded secret, known only to its select membership, whose unwavering loyalty to the cause is a testament to the power and allure of the arcane.",
+            "Team PokéMart": "Comprised of a diverse array of individuals united by a shared affinity for the world-renowned PokéMarts, Team PokéMart boasts a straightforward and intuitive approach to its operations. Members of this illustrious team are incentivized to increase their productivity and generate greater profits through a system of commissions that enable them to rise through the ranks and assume positions of increasing responsibility within the organization. The ultimate reward for their dedication and hard work is the freedom to take on more substantial roles, such as sales and promotional work, thus providing ample opportunity for professional growth and development.",
+            "Team Pokémon Center": "Despite its apparent simplicity, Team Pokémon Center is widely regarded as one of the most exclusive and elusive organizations in the entire Lunos region. Membership is strictly limited to certified Pokémon Center Nurse Joys, a rigorous qualification recognized the world over for its exacting standards and uncompromising demands. Indeed, such is the rarity and prestige of this coveted certification that not a single non-Joy has ever managed to gain entry into the team's ranks. Yet, despite its formidable reputation, Team Pokémon Center remains remarkably accommodating and flexible, offering its members the unique opportunity to hold dual membership with another elite team, further cementing its status as one of the most coveted and respected organizations in the entire Pokémon world.",
+            "Team Magnolia": "Nurtured by a deep-seated passion for all things botanical and horticultural, the members of this esteemed organization represent the Lunos region's foremost authority on gardening and herbology. Boasting a well-deserved reputation as the preeminent team of its kind in the entire region, this select group of experts comprises a diverse range of individuals with a wide array of specializations, from accomplished botanists and skilled flower arrangers to seasoned interior decorators. Certified by the prestigious Board of Lunos, each member of this elite team possesses the scientific background and expertise necessary to perform their duties to the highest standards of excellence, ensuring that their skills and knowledge remain at the cutting edge of the flourishing industry of herbalism.",
+            "Team Nurture": "At the forefront of the Lunos region's efforts to promote the well-being and vitality of its beloved Pokémon companions stands this exceptional team of dedicated professionals. Committed to the dual objectives of Pokémon grooming and healthcare, they represent the epitome of excellence in all matters relating to the welfare and happiness of these treasured creatures. With a comprehensive suite of services ranging from state-of-the-art daycare facilities and compassionate babysitting services to specialized counseling and cutting-edge veterinary care, this remarkable organization has become the go-to destination for discerning Pokémon trainers seeking to provide their beloved companions (and others) with the very best in personalized attention and care.",
+            "Team Professor": "This distinguished team stands out as a shining beacon of intellectual excellence within the vibrant and dynamic Lunos region. Their goal is a noble one, to unite the greatest minds in the region under a single banner, and thereby harness the collective power of their formidable intellects for the betterment of all. While the scope of their ambition is vast, their exacting entry requirements are no less stringent, with membership reserved exclusively for those possessing a PhD, MD, or PsyD in one or more subjects. As its description may imply, they do not possess a traditional &quotteam headquarters&quot; or any team heraldry, instead meeting once a month to discuss pertinent issues affecting the Lunos region (of which the time and destination are arranged by the current Head Professor of the Lunos region).",
+            "Team Cyberse": "An OOG (online organized group) of individuals with a united goal and desire to better the Lunos region, which was established by a parliamentary council of trainers who wished to fix inherent flaws within the Lunos region's operation.",
+            "Team Nemesis": "An unacknowledged and unofficial group operating within the Lunos region has come to the attention of the local authorities, with the Lunos Police Department designating them an imminent terrorism threat. Trainers are cautioned against any association with individuals purporting to be affiliated with this group.",
+            "Team P-Genesis": "A highly influential team that focuses on a wide range of domains, including advertising, marketing, communications, construction, and networking. It serves as the flagship division of the renowned Crowley Corporation, spearheading several groundbreaking technological advancements throughout the Lunos region.",
+			"Team Neptune": "Bound together by a profound reverence for the sea and all that lies beneath its ever-shifting surface, Team Neptune stands as the foremost maritime organization within the Lunos region. Its membership is composed of an eclectic assortment of sailors, divers, marine biologists, aquaculture specialists, treasure hunters, cartographers, and deep-sea explorers, all united beneath a shared fascination with the mysteries of the ocean.",
+			"Team Gym Gold": "Founded under the mentorship of Harvey, the Heart Gym Leader of the Lunos region, Team Gym Gold is an organization devoted to the pursuit of physical excellence, unwavering discipline, and the strengthening of the bond between Trainer and Pokémon through shared struggle. Unlike traditional battle teams that focus exclusively upon commanding Pokémon from afar, Team Gym Gold emphasizes direct participation alongside one's partners, encouraging its members to train their own bodies with the same rigor expected of their Pokémon companions.",
+			"Team Rosé": "Celebrated throughout the Lunos region as a haven for creative expression and artistic ambition, Team Rosé is an organization devoted to both the performing and traditional arts in all their myriad forms. Its membership encompasses an astonishingly diverse collective of actors, musicians, dancers, animators, illustrators, playwrights, novelists, costume designers, and visual artists, many of whom incorporate Pokémon companionship directly into their craft and performances. Whether through elaborate stage productions, animated features, literary publications, orchestral showcases, or experimental artistic collaborations between humans and Pokémon, Team Rosé champions the belief that art possesses the unique power to shape culture, preserve emotion, and inspire societal change.",
+			"Team Kryptos": "Dedicated to the pursuit, preservation, and dissemination of information throughout the Lunos region, Team Kryptos serves as the continent's foremost collective of journalists, reporters, photographers, broadcasters, editors, and investigative correspondents. Its members operate across a vast spectrum of media industries, ranging from traditional newspapers and televised reporting to independent journalism, online publications, documentary production, and battlefield correspondence. United by the belief that information shapes the very foundation of society, Team Kryptos encourages its members to pursue stories wherever they may lead, whether covering regional politics, Pokémon League developments, corporate scandals, humanitarian crises, or the increasingly volatile activities of unofficial organizations operating within Lunos.",
+            "Team Belts of the Sun": "A rather peculiar team with an idiosyncratic ritual—the worship of the Sun. The team's philosophy revolves around the notion that harnessing the power of the Sun's rays can imbue martial artists with heightened strength and prowess, hence the rejection of traditional dojos and retreats like monk temple training. As nomads, they lack a fixed base of operations and roam the land in pursuit of enlightenment.",
+            "Team Marigold": "Team Marigold is a community dedicated to the dissemination and pursuit of knowledge through the medium of books and libraries. Though some may liken it to a mere book club, its scope extends far beyond the traditional confines of such an organization. Team Marigold operates multiple book distributors across the Lunos region, applying their extensive knowledge to the management of libraries, information exchanges, and bastions of knowledge throughout the continent. Its members include qualified historians and researchers, committed to the unearthing of new knowledge, which they record within the very books that they revere.",
+			"Kingdom of Darkness": "A bizarre and theatrically extravagant organization that only recently obtained official recognition within the Lunos region, the so-called Kingdom of Darkness is presided over by its self-proclaimed monarch, Dark Darkness, the 'King of the Kingdom of Darkness.' Despite the ominous implications of its title, the organization appears to concern itself far less with conquest or villainy and far more with the dramatic arts, particularly the craft of immersive character acting and live theatrical performance. Members are encouraged—if not outright required—to adopt elaborate personas, speak in dramatic prose, and remain 'in character' throughout official gatherings and public events.",
+			"Frontier Brains": "A Frontier Brain is a special Trainer who presides over a Battle Frontier facility. The Battle Frontier is an advanced facility where skilled Trainers can challenge various Battle challenges and facilities, each with its own unique rules and conditions. Frontier Brains are formidable Pokémon Trainers known for their expertise and strategy. They serve as the ultimate challenge for Trainers seeking to prove their skills in intense battles.",
+			"Lunos Police Force": "Serving as the principal law enforcement body of the Lunos region, the Lunos Police Force is entrusted with the preservation of public order, criminal investigation, emergency response, and the containment of threats involving both humans and Pokémon alike. Though commonly associated with patrol officers and detectives, the organization encompasses a far broader network of specialized divisions, including cybercrime investigators, Pokémon handling units, anti-terror task forces, forensic analysts, and hazardous response teams trained to address incidents involving rogue Pokémon and illegal battle activity.",
+            "No Membership": "This contact does not have membership in any teams recognized by the Lunos Region.",
+            "Membership Redacted": "This contact has chosen to hide their membership status. Once confirmed by the Lunos Region, a contact cannot hide their affiliation status, but they can choose not to disclose their team.",
+        };
+
+        const verifiedBadges = {
+            "verified-gym": "This account is notable because it has been verified as a concurrently-active gym leader.",
+            "verified-nurse": "This account is notable because it has been verified as a Pokémon Center Nurse Joy.",
+            "verified-officer": "This account is notable because it has been verified as a member of the Lunos Police Department.",
+            "verified-ranger": "This account is notable because it has been verified as a member of the Lunos Rangers.",
+            "verified-corporate": "This account is notable because it has been verified as a corporate or business entity.",
+            "verified-researcher": "This account is notable because it has been verified as a news informant, journalist, or researcher.",
+        };
+
+        let selectedContact = null;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+        }
+
+        function toggleBadgeCase() {
+            const badgeCase = document.getElementById('badgeCase');
+            const badgeCaseToggle = document.getElementById('badgeCaseToggle');
+
+            if (badgeCase.style.display === 'none' || badgeCase.style.display === '') {
+                badgeCase.style.display = 'table';
+                badgeCaseToggle.innerText = 'Close Badge Case';
+            } else {
+                badgeCase.style.display = 'none';
+                badgeCaseToggle.innerText = 'Open Badge Case';
+            }
+        }
+
+        function toggleContestRecord() {
+            const contestRecord = document.getElementById('contestRecord');
+            const contestRecordToggle = document.getElementById('contestRecordToggle');
+
+            if (contestRecord.style.display === 'none' || contestRecord.style.display === '') {
+                contestRecord.style.display = 'block';
+                contestRecordToggle.innerText = 'Hide Contest Record';
+            } else {
+                contestRecord.style.display = 'none';
+                contestRecordToggle.innerText = 'View Contest Record';
+            }
+        }
+
+        function renderBadgeCase(badges) {
+            let tableHTML = '';
+            for (let row = 0; row < badges.length; row++) {
+                tableHTML += '<tr>';
+                for (let col = 0; col < badges[row].length; col++) {
+                    const badge = badges[row][col];
+                    const cellColor = (row + col) % 2 === 0 ? 'bg-color-1' : 'bg-color-2';
+                    tableHTML += `<td class="${cellColor}">`;
+                    if (badge) {
+                        tableHTML += `<img src="badges/${badge}.png" class="w-20 h-10">`;
+                    }
+                    tableHTML += '</td>';
+                }
+                tableHTML += '</tr>';
+            }
+            return tableHTML;
+        }
+
+        function renderContestRecord(ribbons) {
+            if (ribbons.length === 0) {
+                return '<p class="text-gray-400">This contact has no contest ribbons registered to their profile.</p>';
+            }
+            return '<ul>' + ribbons.map(ribbon => `<li>${ribbon}</li>`).join('') + '</ul>';
+        }
+
+        function renderVerificationBadge(badge) {
+            if (!badge) return '';
+            const description = verifiedBadges[badge] || "No description available.";
+            return `
+                <div class="tooltip inline-block">
+                    <img src="verify/${badge}.png" alt="${badge}" class="w-5 h-5" style="margin-top: 6px;">
+                    <span class="tooltip-text">${description}</span>
+                </div>
+            `;
+        }
+
+        // Attach a fallback handler to images so missing files use a placeholder
+        function attachImageFallbacks(root = document) {
+            try {
+                const imgs = root.querySelectorAll && root.querySelectorAll('#contactList img, #chatContainer img');
+                if (!imgs) return;
+                imgs.forEach(img => {
+                    if (img.dataset.fallbackAttached) return;
+                    img.dataset.fallbackAttached = '1';
+                    img.onerror = function() {
+                        this.onerror = null;
+                        this.src = 'contact/WIP.png';
+                    };
+                });
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        // Observe added nodes under #contactList so we can attach fallbacks automatically
+        (function observeContactListForImages() {
+            const contactList = document.getElementById('contactList');
+            if (!contactList || typeof MutationObserver === 'undefined') return;
+            const mo = new MutationObserver(mutations => {
+                for (const m of mutations) {
+                    if (!m.addedNodes) continue;
+                    m.addedNodes.forEach(node => {
+                        if (!node) return;
+                        if (node.nodeType !== 1) return;
+                        if (node.tagName === 'IMG') {
+                            if (!node.dataset.fallbackAttached) {
+                                node.dataset.fallbackAttached = '1';
+                                node.onerror = function() { this.onerror = null; this.src = 'contact/WIP.png'; };
+                            }
+                        }
+                        if (node.querySelectorAll) {
+                            node.querySelectorAll('img').forEach(img => {
+                                if (!img.dataset.fallbackAttached) {
+                                    img.dataset.fallbackAttached = '1';
+                                    img.onerror = function() { this.onerror = null; this.src = 'contact/WIP.png'; };
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+            mo.observe(contactList, { childList: true, subtree: true });
+        })();
+
+		function selectContact(element, name, image, status, birthdate, statusColor, gps, badgeCase, team, tag, ribbons, verificationBadge, mutualFriends, familyMembers) {
+            // Remove active state from all contacts
+            document.querySelectorAll('.contact-list > div').forEach(contact => {
+                contact.classList.remove('bg-gray-700');
+            });
+
+            // Add active state to selected contact
+            element.classList.add('bg-gray-700');
+
+            // Update selected contact
+            selectedContact = { name, image, status, birthdate, statusColor, gps, badgeCase, team, tag, ribbons, verificationBadge, familyMembers };
+
+			// Calculate age from birthdate
+			const birthDateObj = new Date(birthdate);
+			const currentDate = new Date("June 10, 2021");
+
+			// Check if the birthdate is valid
+			const isValidDate = !isNaN(birthDateObj.getTime());
+			const age = isValidDate
+				? currentDate.getFullYear() - birthDateObj.getFullYear() - 
+				  (currentDate < new Date(currentDate.getFullYear(), birthDateObj.getMonth(), birthDateObj.getDate()) ? 1 : 0)
+				: null;
+
+            // Determine GPS state
+            let gpsState = "";
+            if (gps === "enabled") {
+                gpsState = "📶 GPS Enabled";
+            } else if (gps === "disabled") {
+                gpsState = "🚫 GPS Disabled";
+            } else if (gps === "nosignal") {
+                gpsState = "📴 No Signal";
+            } else if (gps === "donotdisturb") {
+                gpsState = "⛔ Do Not Disturb";
+            }
+
+            // Get team description
+            const teamDescription = teamDescriptions[team] || "No description available.";
+
+            // Update chat container to display contact details
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.innerHTML = `
+                <img src="${image}" onerror="this.onerror=null;this.src='contact/WIP.png'" class="w-48 h-48 object-cover mb-4" alt="${name}'s Avatar">
+				<div class="flex items-center">
+				  <span class="inline-block">${renderVerificationBadge(verificationBadge)} &nbsp;</span>
+				  <h2 class="text-gray-200 text-2xl font-bold mb-1 inline-flex items-center">
+					<span class="inline-block">${name}</span>
+					<span class="${statusColor} rounded-full w-3 h-3 inline-block ml-2" style="margin-top: 6px;"></span>
+				  </h2>
+				</div>
+                <p class="text-gray-400 text-sm" style="margin-top: -4px; margin-bottom: 4px;">@${tag}</p>
+				<div class="tooltip-container" style="text-align: center; margin-top: -10px; margin-bottom: 12px;">
+					<div class="tooltip mt-2" style="display: inline-block; text-align: center;">
+						<span class="birthday-text">
+							<p class="text-gray-400 text-sm mt-2" style="font-family: 'Dyno Bold'; text-align: center; display: inline; border-bottom: 1px dashed;">🎂 ${birthdate}</p>
+						</span>
+						<span class="tooltip-text">${isValidDate ? `This user is ${age} years old.` : "This user's birthdate could not be calculated."}</span>
+					</div>
+					<span style="margin: 0 2px 0 4px; color: #888; display: inline-block;">—</span>
+					<div class="tooltip" style="display: inline-block; text-align: center;">
+						<p class="text-gray-400 text-sm mt-1" style="font-family: 'FutureMillennium'; display: inline; border-bottom: 1px dashed;">👥 ${team}</p>
+						<span class="tooltip-text">${teamDescription}</span>
+					</div>
+                        <span style="margin: 0 2px 0 4px; color: #888; display: inline-block;">—</span>
+                        <div style="display: inline-block; text-align: center;">
+                            <p class="text-gray-200 text-sm mt-1" style="font-family: 'FutureMillennium'; display: inline;">${gpsState}</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-400 text-sm px-4 py-2 bg-gray-700 rounded-lg max-w-[500px] mb-3">${status}</p>
+                    <p id="badgeCaseToggle" class="text-gray-400 text-sm underline cursor-pointer" style="text-decoration: dashed;" onclick="toggleBadgeCase()">Open Badge Case</p>
+                <table id="badgeCase" class="badge-case">
+                    ${renderBadgeCase(badgeCase)}
+                </table>
+                <p id="contestRecordToggle" class="text-gray-400 text-sm underline cursor-pointer mt-4" style="text-decoration: dashed;" onclick="toggleContestRecord()">View Contest Record</p>
+                <div id="contestRecord" class="contest-record">
+                    ${renderContestRecord(ribbons)}
+                </div>
+				<div id="mutualFriendsContainer" class="mutual-card">
+					<div class="mutual-title">
+						<i class="fas fa-user-friends"></i>
+						<h3 class="text-gray-200 text-sm font-semibold">Mutual Friends</h3>
+					</div>
+					<div class="mutual-friends" id="mutualFriendsList">
+						${renderMutualFriends(mutualFriends || [])}
+					</div>
+				</div>
+
+				${renderFamilyMembers(familyMembers || [])}
+            `;
+            // Ensure any images inside chatContainer have the fallback attached
+            try { attachImageFallbacks(chatContainer); } catch (e) { /* ignore */ }
+        }
+
+        function renderMutualFriends(mutualFriends) {
+            if (!mutualFriends || mutualFriends.length === 0) {
+                return '<p class="text-gray-400 text-sm">No mutual friends.</p>';
+            }
+            return mutualFriends.map(friendName => {
+                // Build expected filenames and image paths from friendName
+                const anchorId = friendName.replace(/\s+/g, '_');
+                const imageFile = `friends/${friendName.replace(/\s+/g, '_')}_Token.png`;
+                // On click we want to find the contact in the sidebar and simulate a click
+                return `
+                    <div class="mutual-friend">
+                        <img src="${imageFile}" alt="${friendName}" class="mutual-friend-img" onclick="jumpToContact('${friendName}')" title="View ${friendName}" />
+                    </div>
+                `;
+            }).join('');
+        }
+
+		function renderFamilyMembers(familyMembers) {
+			// Do not render anything if empty
+			if (!familyMembers || familyMembers.length === 0) {
+				return '';
+			}
+
+			return `
+				<div id="familyContainer" class="mutual-card family-card">
+					<div class="mutual-title">
+						<i class="fas fa-house-user"></i>
+						<h3 class="text-gray-200 text-sm font-semibold">Family</h3>
+					</div>
+
+					<div class="mutual-friends" id="familyList" style="justify-content: flex-start;">
+						${
+							familyMembers.map(memberName => {
+								const imageFile = `contact/${memberName.replace(/\s+/g, '_')}_Token.png`;
+
+								return `
+									<div class="mutual-friend">
+										<img
+											src="${imageFile}"
+											alt="${memberName}"
+											class="mutual-friend-img"
+											onclick="jumpToContact('${memberName}')"
+											title="View ${memberName}"
+										/>
+									</div>
+								`;
+							}).join('')
+						}
+					</div>
+				</div>
+			`;
+		}
+
+        function jumpToContact(name) {
+            // Normalize and handle special-case name mappings (e.g. renamed contacts)
+            let searchName = name.trim();
+            const lowerInput = searchName.toLowerCase();
+
+            // Special exceptions: map older/short names to current canonical names
+            if (lowerInput === 'nate' || lowerInput === 'nate manu' || lowerInput === 'nate_manu') {
+                searchName = 'Ignatius Kane';
+            }
+
+            const search = searchName.trim().toLowerCase();
+
+            // Get all candidate elements
+            const candidates = Array.from(document.querySelectorAll('#contactList div'));
+
+            let exactMatch = null;
+            let partialMatches = [];
+
+            for (const el of candidates) {
+                const h3 = el.querySelector?.('h3');
+                if (!h3) continue;
+
+                const contactName = h3.innerText.trim();
+                const lowerName = contactName.toLowerCase();
+
+                // Exact match
+                if (lowerName === search) {
+                    exactMatch = el;
+                    break;
+                }
+
+                // Partial match (*search*)
+                if (lowerName.includes(search)) {
+                    partialMatches.push({
+                        el,
+                        score: lowerName.indexOf(search)
+                    });
+                }
+            }
+
+            // Prefer exact match
+            if (exactMatch) {
+                exactMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                exactMatch.click();
+                return;
+            }
+
+            // Otherwise choose closest partial match
+            if (partialMatches.length > 0) {
+                // Sort by best match position + shortest name
+                partialMatches.sort((a, b) => {
+                    if (a.score !== b.score) {
+                        return a.score - b.score;
+                    }
+
+                    const aLen = a.el.querySelector('h3').innerText.length;
+                    const bLen = b.el.querySelector('h3').innerText.length;
+
+                    return aLen - bLen;
+                });
+
+                const bestMatch = partialMatches[0].el;
+
+                bestMatch.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+
+                bestMatch.click();
+                return;
+            }
+
+            // Fallback: try loading contact file
+            const filename = 'contacts/' + name.replace(/\s+/g, '_') + '.html';
+
+            fetch(filename)
+                .then(r => {
+                    if (!r.ok) throw new Error('Not found');
+                    return r.text();
+                })
+                .then(html => {
+                    const contactList = document.getElementById('contactList');
+                    contactList.innerHTML += html;
+
+					sortContacts();
+
+                    setTimeout(() => jumpToContact(name), 100);
+                })
+                .catch(() => {
+                    console.warn('No contact found for:', name);
+                });
+        }
+
+		function sortContacts() {
+			const contactList = document.getElementById('contactList');
+
+			// Only grab actual contact cards that contain an h3
+            const contacts = Array.from(contactList.children).filter(contact =>
+                contact.querySelector && contact.querySelector('h3')
+            );
+
+            // Create a sorted copy
+            const sorted = contacts.slice().sort((a, b) => {
+                const nameA = a.querySelector('h3').textContent.trim().toLowerCase();
+                const nameB = b.querySelector('h3').textContent.trim().toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+
+            // Only re-append if the order actually differs to avoid unnecessary DOM moves
+            let orderChanged = false;
+            for (let i = 0; i < sorted.length; i++) {
+                if (contacts[i] !== sorted[i]) { orderChanged = true; break; }
+            }
+
+            if (!orderChanged) return;
+
+            // Re-append in sorted order (use DocumentFragment for minimal reflow)
+            const frag = document.createDocumentFragment();
+            sorted.forEach(contact => frag.appendChild(contact));
+            contactList.appendChild(frag);
+		}
+
+        // Auto-sort any newly added contact cards.
+        // This debounce + MutationObserver ensures contacts appended dynamically
+        // (via fetch or manual HTML edits) get alphabetized without excessive work.
+        function debounce(fn, wait) {
+            let t;
+            return function(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
+
+        const debouncedSortContacts = debounce(() => {
+            try { sortContacts(); } catch (e) { /* ignore */ }
+        }, 120);
+
+		document.addEventListener('DOMContentLoaded', () => {
+
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', () => {
+                const raw = searchInput.value.trim();
+                const contacts = document.querySelectorAll('.contact-list > div');
+
+                // If query begins with @, search usernames/handles instead of display names
+                const isHandleSearch = raw.startsWith('@');
+                const query = (isHandleSearch ? raw.slice(1) : raw).toLowerCase();
+
+                contacts.forEach(contact => {
+                    let visible = false;
+
+                    if (isHandleSearch) {
+                        // try to find the paragraph that contains the handle (starts with @)
+                        const p = contact.querySelector('p');
+                        if (p) {
+                            const handleText = p.innerText.replace(/^@/, '').toLowerCase();
+                            if (handleText.includes(query)) visible = true;
+                        }
+                    } else {
+                        const name = contact.querySelector('h3')?.innerText.toLowerCase() || '';
+                        if (name.includes(query)) visible = true;
+                    }
+
+                    contact.style.display = visible ? 'flex' : 'none';
+                });
+            });
+        });
+
+            // Observe #contactList for additions so we can auto-sort newly appended contacts.
+            (function observeContactListForSorting() {
+                const contactList = document.getElementById('contactList');
+                if (!contactList || typeof MutationObserver === 'undefined') return;
+
+                const observer = new MutationObserver(mutations => {
+                    let shouldSort = false;
+                    for (const m of mutations) {
+                        if (m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length)) {
+                            shouldSort = true;
+                            break;
+                        }
+                    }
+                    if (shouldSort) debouncedSortContacts();
+                });
+
+                observer.observe(contactList, { childList: true, subtree: false });
+            })();
+    </script>
+	<script>
+		async function loadContactHTML() {
+			const contactList = document.getElementById('contactList');
+			const hash = decodeURIComponent(window.location.hash.substring(1));
+
+			// Hashes that should act as mutual-friend filters
+			const mutualFilters = [
+				'Alos',
+				'Bell',
+				'Delilah',
+				'Elsie',
+				'Hal',
+				'Ixazalvohael',
+				'Kai',
+				'Nate',
+				'Pendras',
+				'Randal',
+				'Robin',
+				'Ruben'
+			];
+
+			// Master contact list
+			let contactFiles = [
+				'contacts/Aaron_Favre.html',
+				'contacts/Eris_Joy.html',
+				'contacts/Aurellia_Sommer.html',
+				'contacts/Acacia_Woods.html',
+				'contacts/Akiha_Akisada.html',
+				'contacts/Albizia_Juli.html',
+				'contacts/Alice.html',
+				'contacts/Alma_Joy.html',
+				'contacts/Alos.html',
+				'contacts/Antonio_Navajo.html',
+				'contacts/Ariel_Hennessy.html',
+				'contacts/Austin_Favre.html',
+				'contacts/Bella_d_Allaire.html',
+				'contacts/Cheryl_Ellerby.html',
+				'contacts/Chloris.html',
+				'contacts/Claire_Thompson.html',
+				'contacts/Clarise_Enchantwell.html',
+				'contacts/Clarissa_Jacobs.html',
+				'contacts/Dark_Darkness.html',
+				'contacts/Delilah_Marigold.html',
+				'contacts/Delphi_Pythia.html',
+				'contacts/Devin_Wanderfield.html',
+				'contacts/Dustin_Sorts.html',
+				'contacts/Elizabeth_Abbey.html',
+				'contacts/Elsie.html',
+				'contacts/Erwin_Lawson.html',
+				'contacts/Eta_Lmrabet.html',
+				'contacts/Eve.html',
+				'contacts/Fiorella_Rousseau.html',
+				'contacts/Geb_Said.html',
+				'contacts/Garrett_Damarian.html',
+				'contacts/Graham_Crowley.html',
+				'contacts/Hal_Murdock.html',
+				'contacts/Harvey_Pearson.html',
+				'contacts/Isaac_Newheart.html',
+				'contacts/Ixazalvohael.html',
+				'contacts/Jason_Sommer.html',
+				'contacts/Jeff_Daniels.html',
+				'contacts/Jim_Gai.html',
+				'contacts/Jodie_Ellerby.html',
+				'contacts/Kai_Wolfbane.html',
+				'contacts/Kat.html',
+				'contacts/Keemo_Snickare.html',
+				'contacts/Ken_Harelock.html',
+				'contacts/Laci_Harelock.html',
+				'contacts/Liko_Makaiau.html',
+				'contacts/Lucas_Wainwright.html',
+				'contacts/Marie.html',
+				'contacts/Melissa_Sanchez.html',
+				'contacts/Jessica_Damarian.html',
+				'contacts/Ignatius_Kane.html',
+				'contacts/Orvia_Bishop.html',
+				'contacts/Pendras.html',
+				'contacts/Randal_Novak.html',
+				'contacts/Raven_Hayward.html',
+				'contacts/Reginald_Reid.html',
+				'contacts/Rei_Joy.html',
+				'contacts/Ridge_Jacobs.html',
+				'contacts/Rikka.html',
+				'contacts/Rob_Night.html',
+				'contacts/Robin.html',
+				'contacts/Roger_Blake.html',
+				'contacts/Romeo_Jacuzzi.html',
+				'contacts/Ruben.html',
+				'contacts/Sakura_Cherrywood.html',
+				'contacts/Senka.html',
+				'contacts/Sheena_Lanfen.html',
+				'contacts/Shunlan_Meifeng.html',
+				'contacts/Taxus_Yew.html',
+				'contacts/The_Master.html',
+				'contacts/Therese_Daniels.html',
+				'contacts/Thomas_Lee.html',
+				'contacts/Tracie_Favre.html',
+				'contacts/Tricia.html',
+				'contacts/Tris_Valerian.html',
+				'contacts/Vara_Novak.html',
+				'contacts/Violet_Hayward.html',
+				'contacts/Yukino_Korimiko.html',
+				'contacts/Yunomi.html',
+				// 5-7-2026 New Contacts
+				'contacts/Trent.html',
+				'contacts/Piera_McAllister.html',
+				'contacts/Drayden_McAllister.html',
+				'contacts/Shigemitsu_Sudo.html',
+				'contacts/Wendy_Libel.html',
+				'contacts/Syre_Halcyon.html',
+				'contacts/Tommy_Langford.html',
+				'contacts/Trust_Langford.html',
+				'contacts/Caeya_Blackwell.html',
+				'contacts/Fredrick_Blackwell.html',
+				'contacts/Rain_Sinclair.html',
+				'contacts/Tristan_Teach.html',
+				'contacts/Daphne.html'
+
+			];
+
+			try {
+				for (const file of contactFiles) {
+					const response = await fetch(file);
+					const html = await response.text();
+
+					// If hash is a mutual filter, only include contacts
+					// whose mutualFriends array contains that hash
+					if (mutualFilters.includes(hash)) {
+
+						// Match the mutual friends array from selectContact(...)
+						const mutualMatch = html.match(
+							/\[\s*([^\]]*?)\s*\]\s*\)\s*">/s
+						);
+
+						if (mutualMatch) {
+							const mutualText = mutualMatch[1];
+
+							// Check if the hash exists inside the array
+							if (mutualText.includes(`'${hash}'`) || mutualText.includes(`"${hash}"`)) {
+								contactList.innerHTML += html;
+							}
+						}
+
+					} else {
+						// Normal behavior
+						contactList.innerHTML += html;
+					}
+				}
+
+				sortContacts();
+
+			} catch (error) {
+				console.error('Error loading contact HTML files:', error);
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', loadContactHTML);
+	</script>
+</body>
+</html>
