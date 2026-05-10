@@ -145,6 +145,104 @@
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
+
+        /* Group chats styles */
+        .group-chats-container {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid rgba(55,65,81,0.6);
+        }
+
+        .group-chat-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.35rem 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .group-chat-item:hover {
+            background-color: rgba(255,255,255,0.02);
+        }
+
+        .gc-left { display:flex; align-items:center; gap:0.5rem }
+        .gc-badge {
+            background: linear-gradient(90deg,#7dd3fc,#60a5fa);
+            color: #032541;
+            font-weight: 700;
+            padding: 0.12rem 0.5rem;
+            border-radius: 999px;
+            font-size: 11px;
+            min-width: 26px;
+            text-align: center;
+        }
+
+		.group-chat-messages {
+			height: 55vh;
+			overflow: auto;
+		}
+        /* Avatar images only (not chat attachments) */
+        .group-message img:not(.chat-image) { border-radius: 999px; transition: transform 120ms ease; cursor: pointer }
+        .group-message img:not(.chat-image):hover { transform: scale(1.45); z-index: 50 }
+        /* Inline chat images */
+        .group-message img.chat-image { border-radius: 8px; cursor: default; transition: none }
+        /* Discord-like message styling */
+        .group-message { padding: 0.6rem; }
+        .group-message:hover { background-color: rgba(255,255,255,0.02); border-radius:6px }
+        .group-message .meta { display:flex; gap:0.5rem; align-items:baseline }
+        .group-message .author { font-weight:700; font-size:15px; color:#e6edf3 }
+        .group-message .handle { font-size:12px; color:#9aa6b2; margin-left:6px }
+        .group-message .content { margin-top:4px; font-size:15px; color:#dbe7f1 }
+        
+        .reply-preview { font-size: 12px; color: #9aa6b2; margin-bottom:6px; padding:6px 8px; background: rgba(255,255,255,0.02); border-left: 3px solid rgba(154,166,178,0.18); border-radius:6px }
+        .chat-image { max-width: 420px; max-height: 360px; display:block; margin-top:8px; border-radius:8px; object-fit:cover }
+        .system-message { text-align:center; color:#cbd5e1; font-size:13px; background: rgba(255,255,255,0.02); padding:8px 10px; border-radius:8px; margin:10px 0 }
+		.system-mention {
+			display: inline-flex;
+			align-items: center;
+			vertical-align: middle;
+			gap: 6px;
+			margin: 0 4px;
+			line-height: 1;
+		}
+
+		.system-mention img {
+			display: block;
+			width: 18px;
+			height: 18px;
+			border-radius: 999px;
+			object-fit: cover;
+		}
+        .system-mention strong { color:#e6edf3; font-weight:700 }
+		.gc-dropdown-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			cursor: pointer;
+			user-select: none;
+			padding: 8px 10px;
+			border-radius: 8px;
+			background: rgba(255,255,255,0.03);
+			transition: background 0.15s ease;
+		}
+
+		.gc-dropdown-header:hover {
+			background: rgba(255,255,255,0.05);
+		}
+
+		.gc-dropdown-content {
+			display: none;
+			margin-top: 8px;
+		}
+
+		.gc-dropdown-content.open {
+			display: block;
+		}
+
+		.gc-dropdown-arrow {
+			color: #9aa6b2;
+			font-size: 12px;
+		}
     </style>
 </head>
 <body class="bg-gray-900 h-screen flex">
@@ -155,7 +253,14 @@
                 <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
             </div>
         </div>
-        <div class="overflow-y-auto h-[calc(100vh-80px)]">
+        <div class="group-chats-container">
+            <div class="flex items-center justify-between">
+                <h4 class="text-gray-200 text-sm font-semibold">Group Chats</h4>
+                <button id="toggleGroupChats" class="text-xs text-gray-400" onclick="toggleGroupChats()">Show</button>
+            </div>
+            <div id="groupChatList" class="mt-2 space-y-2 hidden"></div>
+        </div>
+        <div class="overflow-y-auto h-[calc(100vh-110px)]">
             <div id="contactList" class="contact-list space-y-2 p-3">
 
 			<!-- Contacts will be dynamically injected here -->
@@ -541,6 +646,48 @@
 			`;
 		}
 
+		function renderMemberBlock(title, iconClass, members) {
+			if (!members || members.length === 0) return '';
+
+			const dropdownId = `gc-dropdown-${title.toLowerCase().replace(/\s+/g, '-')}`;
+
+			return `
+				<div class="mutual-card">
+					<div class="gc-dropdown-header"
+						 onclick="toggleGroupDropdown('${dropdownId}', this.querySelector('.gc-dropdown-arrow'))">
+
+						<div class="mutual-title">
+							<i class="fas ${iconClass}"></i>
+							<h3 class="text-gray-200 text-sm font-semibold">${title}</h3>
+						</div>
+
+						<span class="gc-dropdown-arrow">v</span>
+					</div>
+
+					<div id="${dropdownId}" class="gc-dropdown-content">
+						<div class="mutual-friends" style="justify-content: flex-start;">
+							${members.map(memberName => {
+								const imageFile = `contact/${memberName.replace(/\s+/g, '_')}_Token.png`;
+
+								return `
+									<div class="mutual-friend">
+										<img
+											src="${imageFile}"
+											alt="${memberName}"
+											class="mutual-friend-img"
+											onclick="jumpToContact('${memberName}')"
+											title="View ${memberName}"
+											onerror="this.onerror=null;this.src='contact/WIP.png'"
+										/>
+									</div>
+								`;
+							}).join('')}
+						</div>
+					</div>
+				</div>
+			`;
+		}
+
         function jumpToContact(name) {
             // Normalize and handle special-case name mappings (e.g. renamed contacts)
             let searchName = name.trim();
@@ -727,9 +874,408 @@
 
                 observer.observe(contactList, { childList: true, subtree: false });
             })();
-    </script>
-	<script>
-		async function loadContactHTML() {
+
+        </script>
+        <script>
+            const groupChats = [
+                { file: 'groupchats/Latias_Group_Chat.html', title: 'Latias Group Chat' }
+            ];
+            const groupChatCounts = {};
+            const contactTagCache = {};
+
+			function toggleGroupDropdown(id, arrowEl) {
+				const content = document.getElementById(id);
+
+				if (!content) return;
+
+				if (content.classList.contains('open')) {
+					content.classList.remove('open');
+					arrowEl.textContent = 'v';
+				} else {
+					content.classList.add('open');
+					arrowEl.textContent = '^';
+				}
+			}
+
+            function toggleGroupChats(){
+                const list = document.getElementById('groupChatList');
+                const btn = document.getElementById('toggleGroupChats');
+                if(!list) return;
+                if(list.classList.contains('hidden')){ list.classList.remove('hidden'); btn.innerText = 'Hide'; }
+                else { list.classList.add('hidden'); btn.innerText = 'Show'; }
+            }
+
+            async function loadGroupChats(){
+                const list = document.getElementById('groupChatList');
+                if(!list) return;
+                list.innerHTML = '';
+                for(const gc of groupChats){
+                    try {
+                        const r = await fetch(gc.file);
+                        if(!r.ok) { groupChatCounts[gc.file]=0; }
+                        else {
+                            const txt = await r.text();
+                            const stripped = (new DOMParser()).parseFromString(txt,'text/html').body.innerText || txt;
+                            const lines = stripped.split('\n').map(l=>l.trim()).filter(Boolean);
+                            const count = lines.filter(l=>/^\s*[^:]+:\s*".*"\s*$/.test(l)).length;
+                            groupChatCounts[gc.file]=count;
+                        }
+                    } catch(e){ groupChatCounts[gc.file]=0; }
+
+                    const item = document.createElement('div');
+                    item.className = 'group-chat-item text-gray-200';
+                    item.innerHTML = `<div class="gc-left"><i class="fas fa-comment"></i><div><div class="text-sm font-semibold">${gc.title}</div><div class="text-xs text-gray-400">${gc.file.replace('groupchats/','')}</div></div></div><div class="gc-badge" data-file="${gc.file}">${groupChatCounts[gc.file]||0}</div>`;
+                    item.onclick = ()=> openGroupChat(gc.file, gc.title);
+                    list.appendChild(item);
+                }
+            }
+
+            async function openGroupChat(file,title){
+                const chatContainer = document.getElementById('chatContainer');
+                chatContainer.innerHTML = `<div class="w-full max-w-3xl mx-auto p-4 text-left"><h2 class="text-gray-200 text-xl font-bold mb-2">${title}</h2><div id="groupDescription" class="text-gray-400 text-sm mb-4"></div><div id="groupMessages" class="group-chat-messages space-y-3"></div></div>`;
+                try {
+                    const r = await fetch(file);
+                    const txt = await r.text();
+                    const doc = (new DOMParser()).parseFromString(txt,'text/html');
+                    // description (channel topic)
+                    const descEl = doc.querySelector('.group-chat-description');
+                    const desc = descEl ? descEl.textContent.trim() : '';
+                    const descTarget = document.getElementById('groupDescription');
+                    if(descTarget) descTarget.innerText = desc;
+
+                    // Creator / Members parsing
+                    const creatorEl = doc.querySelector('.group-chat-creator');
+                    const membersEl = doc.querySelector('.group-chat-members');
+                    function parseNames(el){
+                        if(!el) return [];
+                        const raw = el.innerText || '';
+                        // try JSON-like array first
+                        try{
+                            const maybe = raw.trim();
+                            if(maybe.startsWith('[') && maybe.endsWith(']')){
+                                // replace single-quotes with double for JSON parse
+                                const jsony = maybe.replace(/\'/g, '"');
+                                const arr = JSON.parse(jsony);
+                                if(Array.isArray(arr)) return arr.map(s=>String(s).trim()).filter(Boolean);
+                            }
+                        }catch(e){/* ignore */}
+                        // fallback: split by commas or newlines
+                        return raw.split(/[,\n]/).map(s=>s.trim()).filter(Boolean);
+                    }
+
+                    const creators = parseNames(creatorEl);
+                    const members = parseNames(membersEl);
+
+                    // render creator/members block
+                    const metaBlock = document.createElement('div');
+                    metaBlock.className = 'mb-4';
+                    if(creators.length){
+                        metaBlock.innerHTML += renderMemberBlock('Creator','fa-user',[creators[0]]);
+                    }
+                    if(members.length){
+                        metaBlock.innerHTML += renderMemberBlock('Members','fa-users', members);
+                    }
+                    const descTargetParent = document.getElementById('groupDescription');
+                    if(descTargetParent && metaBlock.innerHTML) descTargetParent.parentNode.insertBefore(metaBlock, descTargetParent.nextSibling);
+
+                    // messages: find .group-chat-raw or fallback to body text
+                    // Prefer extracting the raw block from the original file text so tokens like <Name>
+                    // are preserved (they can be interpreted as HTML tags by the DOM parser).
+                    let raw = '';
+                    const rawEl = doc.querySelector('.group-chat-raw');
+                    if(rawEl){
+                        // try to extract the inner HTML from the original fetched text to preserve literal <Name> tokens
+                        const m = txt.match(/<div[^>]*class=["']group-chat-raw["'][^>]*>([\s\S]*?)<\/div>/i);
+                        if(m && m[1] !== undefined){
+                            let rawBlock = m[1];
+                            rawBlock = rawBlock.replace(/<br\s*\/?>/gi, '\n');
+                            // Protect simple <Name> tokens (alphanumeric, spaces, underscore, hyphen, apostrophe)
+                            const protectedNames = [];
+                            rawBlock = rawBlock.replace(/<([A-Za-z0-9 _'\-]+)>/g, function(_, g1){ protectedNames.push(g1); return `__PROT_${protectedNames.length-1}__`; });
+                            // Remove any remaining HTML tags
+                            rawBlock = rawBlock.replace(/<[^>]+>/g, '');
+                            // Restore protected name tokens
+                            rawBlock = rawBlock.replace(/__PROT_(\d+)__/g, function(_, idx){ return `<${protectedNames[Number(idx)]}>`; });
+                            raw = rawBlock;
+                        } else {
+                            raw = rawEl.innerText || '';
+                        }
+                    } else {
+                        raw = doc.body.innerText || txt;
+                    }
+
+                    const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+                    const messagesEl = document.getElementById('groupMessages');
+                    messagesEl.innerHTML = '';
+
+                    // Parse into message objects, track prior messages to resolve replies
+                    const parsed = [];
+                    for(const line of lines){
+                        const m = parseGroupLine(line);
+                        if(!m) continue;
+                        if(m.type === 'date'){
+                            parsed.push({ type: 'date', label: m.label });
+                            continue;
+                        }
+                        if(m.type === 'system'){
+                            parsed.push({ type: 'system', text: m.text, mentions: m.mentions });
+                            continue;
+                        }
+
+                        // if this message is a reply to targetName, find last message by that name
+                        let replyPreview = null;
+                        if(m.replyTo){
+                            const targetLower = m.replyTo.toLowerCase();
+                            for(let i = parsed.length - 1; i >= 0; i--){
+                                if(parsed[i].type === 'date') continue;
+                                if(parsed[i].name.toLowerCase() === targetLower){
+                                    const lastText = Array.isArray(parsed[i].texts) ? parsed[i].texts[parsed[i].texts.length-1].text : parsed[i].text;
+                                    replyPreview = lastText || null;
+                                    break;
+                                }
+                            }
+                        }
+                        parsed.push({ name: m.name, text: m.text, replyPreview });
+                    }
+
+                    // Group consecutive messages by author, keep replyPreview per message text; preserve date/system entries as their own groups
+                    const groups = [];
+                    for(const p of parsed){
+                        if(p.type === 'date'){
+                            groups.push({ type: 'date', label: p.label });
+                            continue;
+                        }
+                        if(p.type === 'system'){
+                            groups.push({ type: 'system', text: p.text, mentions: p.mentions });
+                            continue;
+                        }
+
+						if (
+							groups.length &&
+							!groups[groups.length - 1].type &&
+							groups[groups.length - 1].name &&
+							p.name &&
+							groups[groups.length - 1].name.toLowerCase() === p.name.toLowerCase()
+						) {
+                            groups[groups.length-1].texts.push({ text: p.text, reply: p.replyPreview });
+                        } else {
+                            groups.push({ name: p.name, texts: [{ text: p.text, reply: p.replyPreview }] });
+                        }
+                    }
+
+                    for(const g of groups){
+                        if(g.type === 'date'){
+                            messagesEl.appendChild(renderDateSeparator(g.label));
+                            continue;
+                        }
+                        if(g.type === 'system'){
+                            messagesEl.appendChild(renderSystemMessage(g.text, g.mentions));
+                            continue;
+                        }
+                        const info = await getContactTag(g.name);
+                        const full = (info && info.fullName) ? info.fullName : g.name;
+                        const tag = (info && info.tag) ? info.tag : undefined;
+                        const imgSrc = (info && info.image) ? info.image : null;
+                        messagesEl.appendChild(renderGroupMessage(full, tag, imgSrc, g.texts));
+                    }
+                } catch(e){ console.error('Failed to load group chat', e); }
+            }
+
+            function parseGroupLine(line){
+                // System token: [System](...)
+                const systemMatch = line.match(/^\s*\[System\]\(([^)]+)\)\s*$/i);
+                if(systemMatch){
+                    const content = systemMatch[1].trim();
+                    const mentions = [];
+                    const mentionRegex = /<([^>]+)>/g;
+                    let mm;
+                    while((mm = mentionRegex.exec(content)) !== null){
+                        mentions.push(mm[1].trim());
+                    }
+                    return { type: 'system', text: content, mentions };
+                }
+
+                // Date separator token: [Date](label)
+                const dateMatch = line.match(/^\s*\[Date\]\(([^)]+)\)\s*$/i);
+                if(dateMatch){
+                    return { type: 'date', label: dateMatch[1].trim() };
+                }
+
+                // support reply syntax: Author -> Target: message
+                const m = line.match(/^\s*([^:]+?):\s*(.*)$/);
+                if(!m) return null;
+                const left = m[1].trim();
+                const rest = m[2] || '';
+
+                // detect reply arrow in left side (e.g. "Lucas -> Liko")
+                let name = left;
+                let replyTo = null;
+                const replyMatch = left.match(/^(.+?)\s*->\s*(.+)$/);
+                if(replyMatch){
+                    name = replyMatch[1].trim();
+                    replyTo = replyMatch[2].trim();
+                }
+
+                // strip surrounding quotes and whitespace from the message text
+                let text = rest.trim();
+                text = text.replace(/^\s*["']/, '');
+                text = text.replace(/["']\s*$/, '');
+                return { name: name, text: text, replyTo: replyTo };
+            }
+
+            function renderMessageContent(rawText){
+                if(!rawText && rawText !== '') return '';
+                const parts = [];
+                const regex = /\[Image\]\(([^)]+)\)/g;
+                let lastIndex = 0;
+                let m;
+                while((m = regex.exec(rawText)) !== null){
+                    const before = rawText.substring(lastIndex, m.index);
+                    if(before) parts.push(escapeHtml(before));
+                    const filename = m[1].trim();
+                    const safeSrc = 'chatimages/' + filename;
+                    parts.push(`<img src="${safeSrc}" class="chat-image" onerror="this.onerror=null;this.src='contact/WIP.png'">`);
+                    lastIndex = regex.lastIndex;
+                }
+                const tail = rawText.substring(lastIndex);
+                if(tail) parts.push(escapeHtml(tail));
+                // join with spaces preserved
+                return parts.join('');
+            }
+
+            function renderGroupMessage(name, tag, imgSrc, text){
+                const el = document.createElement('div');
+                el.className = 'group-message flex items-start space-x-3';
+                const img = document.createElement('img');
+                if(imgSrc){
+                    img.src = imgSrc;
+                } else {
+                    img.src = `contact/${name.replace(/\s+/g,'_')}_Token.png`;
+                }
+                img.className = 'w-10 h-10';
+                img.onerror = function(){ this.onerror=null; this.src='contact/WIP.png'; };
+                img.onclick = function(){ try{ jumpToContact(name); }catch(e){ /* ignore */ } };
+                const body = document.createElement('div');
+                // build meta
+                const metaHtml = `<div class="meta"><div class="author">${escapeHtml(name)}</div><div class="handle">@${escapeHtml(tag || (name.replace(/\s+/g,''))).toLowerCase()}</div></div>`;
+                // build contents (support array of texts for grouped messages)
+                let contentsHtml = '';
+                if(Array.isArray(text)){
+                    for(const t of text){
+                        // t may be an object {text, reply}
+                            if(t && typeof t === 'object'){
+                            if(t.reply){
+                                contentsHtml += `<div class="reply-preview">↳ ${escapeHtml(t.reply)}</div>`;
+                            }
+                            contentsHtml += `<div class="content">${renderMessageContent(t.text)}</div>`;
+                        } else {
+                            contentsHtml += `<div class="content">${renderMessageContent(t)}</div>`;
+                        }
+                    }
+                } else {
+                    contentsHtml = `<div class="content">${escapeHtml(text)}</div>`;
+                }
+                body.innerHTML = metaHtml + contentsHtml;
+                el.appendChild(img);
+                el.appendChild(body);
+                return el;
+            }
+
+            function renderDateSeparator(label){
+                const el = document.createElement('div');
+                el.className = 'date-separator text-center my-4';
+                el.innerHTML = `<div style="display:flex;align-items:center;gap:12px;justify-content:center;color:#9aa6b2;font-size:12px"><hr style="flex:1;border:none;border-top:1px solid rgba(255,255,255,0.06)"><span style="padding:0 8px">${escapeHtml(label)}</span><hr style="flex:1;border:none;border-top:1px solid rgba(255,255,255,0.06)"></div>`;
+                return el;
+            }
+
+            function renderSystemMessage(text, mentions){
+                    const el = document.createElement('div');
+                    el.className = 'system-message';
+                    const regex = /<([^>]+)>/g;
+                    let lastIndex = 0;
+                    let match;
+                    while((match = regex.exec(text)) !== null){
+                        const before = text.substring(lastIndex, match.index);
+                        if(before) el.appendChild(document.createTextNode(before));
+
+                        const name = match[1].trim();
+                        const wrapper = document.createElement('span');
+                        wrapper.className = 'system-mention';
+
+                        const img = document.createElement('img');
+                        img.src = `contact/${name.replace(/\s+/g,'_')}_Token.png`;
+                        img.onerror = function(){ this.onerror=null; this.src='contact/WIP.png'; };
+                        img.onclick = function(){ try{ jumpToContact(name); }catch(e){ } };
+
+                        const strong = document.createElement('strong');
+                        strong.textContent = name;
+
+                        wrapper.appendChild(img);
+                        wrapper.appendChild(strong);
+                        el.appendChild(wrapper);
+
+                        lastIndex = regex.lastIndex;
+                    }
+
+                    const tail = text.substring(lastIndex);
+                    if(tail) el.appendChild(document.createTextNode(tail));
+                    return el;
+            }
+
+            function escapeHtml(str){ return (str+'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+
+            async function getContactTag(name){
+                const key = name.trim();
+                if(contactTagCache[key] !== undefined) return contactTagCache[key];
+
+                // 1) Try to find a matching contact already loaded in the sidebar
+                try{
+                    const lower = key.toLowerCase();
+                    const nodes = Array.from(document.querySelectorAll('#contactList > div'));
+                for(const node of nodes){
+                    const h3 = node.querySelector('h3');
+                    const p = node.querySelector('p');
+                    const imgEl = node.querySelector('img');
+                    if(!h3) continue;
+                    const full = h3.innerText.trim();
+                    if(full.toLowerCase().includes(lower)){
+                        const tag = p && p.innerText ? p.innerText.trim().replace(/^@/,'') : full.replace(/\s+/g,'').toLowerCase();
+                        const imgSrc = imgEl ? (imgEl.getAttribute('src') || imgEl.src) : null;
+                        contactTagCache[key] = { tag, fullName: full, image: imgSrc };
+                        return contactTagCache[key];
+                    }
+                }
+                }catch(e){ /* ignore */ }
+
+                // 2) Fallback: try fetching a contact file by replacing spaces with underscores
+                const filename = 'contacts/' + name.replace(/\s+/g,'_') + '.html';
+                try{
+                    const r = await fetch(filename);
+                    if(r.ok){
+                        const txt = await r.text();
+                        const doc = (new DOMParser()).parseFromString(txt,'text/html');
+                        const p = Array.from(doc.querySelectorAll('p')).find(x=>x.textContent && x.textContent.trim().startsWith('@'));
+                        const h3 = doc.querySelector('h3')?.textContent?.trim();
+                        const imgEl = doc.querySelector('img');
+                        const imgSrc = imgEl ? (imgEl.getAttribute('src') || imgEl.src) : null;
+                        const tag = p ? p.textContent.trim().replace(/^@/,'') : (h3 ? h3.replace(/\s+/g,'').toLowerCase() : name.replace(/\s+/g,'').toLowerCase());
+                        contactTagCache[key] = { tag, fullName: h3 || name, image: imgSrc };
+                        return contactTagCache[key];
+                    }
+                }catch(e){ /* ignore */ }
+
+                // 3) Last resort: synthesize values from given name
+                const fallbackTag = name.replace(/\s+/g,'').toLowerCase();
+                contactTagCache[key] = { tag: fallbackTag, fullName: name };
+                return contactTagCache[key];
+            }
+
+            // Disabled: sending messages from UI is not allowed.
+
+            document.addEventListener('DOMContentLoaded', loadGroupChats);
+        </script>
+    	<script>
+    		async function loadContactHTML() {
 			const contactList = document.getElementById('contactList');
 			const hash = decodeURIComponent(window.location.hash.substring(1));
 
